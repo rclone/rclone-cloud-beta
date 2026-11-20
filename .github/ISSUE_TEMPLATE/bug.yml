@@ -1,0 +1,44 @@
+name: Bug report
+description: Something in rclone Cloud doesn't work as it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Issues here are public. Leave out passwords, tokens, keys and anything else private, in the logs too.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead. Add the steps that make it happen again.
+      placeholder: |
+        I expected …, but …
+
+        1. Open …
+        2. Click …
+    validations:
+      required: true
+  - type: textarea
+    id: version
+    attributes:
+      label: Version
+      description: What `docker exec rclone-cloud rclone-cloud version` prints.
+      render: text
+    validations:
+      required: true
+  - type: input
+    id: system
+    attributes:
+      label: System and browser
+      placeholder: Ubuntu 24.04, Firefox 140
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots
+      description: Paste or drag images here, if they help.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: The app's log lines from when it happened, if any.
+      render: text
