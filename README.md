@@ -693,3 +693,10 @@ To report a bug or ask for a feature, [open an
 issue](https://github.com/rclone/rclone-cloud-beta/issues/new/choose). Add what
 `docker exec rclone-cloud rclone-cloud version` shows. To report a security problem privately, use
 [Report a vulnerability](https://github.com/rclone/rclone-cloud-beta/security/advisories/new).
+
+## Licence
+
+You may use the beta builds free of charge to try and test Rclone Cloud. They come with no
+warranty: read [LICENSE](LICENSE). The third-party software in them is under its own licences,
+listed in `THIRD_PARTY_NOTICES`. It is in each release's archives, in
+`/usr/share/doc/rclone-cloud/` once a package is installed, and at the same path in the image.

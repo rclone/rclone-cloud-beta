@@ -1,0 +1,23 @@
+rclone Cloud beta licence
+
+Copyright (C) 2026 Rclone Services Ltd
+
+This licence covers the beta builds of rclone Cloud (the programs, packages and container images
+published at https://github.com/rclone/rclone-cloud-beta) and the files of that repository.
+
+1. You may download, install and use the beta builds free of charge, to try and test rclone
+   Cloud. No other rights are granted.
+
+2. The beta builds include third-party software, listed with its licences in
+   THIRD_PARTY_NOTICES. Each part is under its own licence, and nothing here limits the rights
+   that licence gives you.
+
+3. A later version of rclone Cloud may come under a different licence. This licence covers the
+   beta builds only.
+
+THE BETA BUILDS ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. THEY ARE PRE-RELEASE SOFTWARE AND MAY CONTAIN BUGS THAT LOSE OR DAMAGE DATA. IN NO
+EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+BETA BUILDS OR THEIR USE.
