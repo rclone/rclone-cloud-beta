@@ -7,7 +7,8 @@
 
 Rclone Cloud gives you and your team [rclone](https://rclone.org) in a browser: connect your cloud
 storage, browse and copy files, and run transfers, mounts and workflows. This repository publishes
-its Docker image and has its [issue tracker](https://github.com/rclone/rclone-cloud-beta/issues).
+its Docker image and its [Linux packages](#install-on-linux-deb-and-rpm), and has its
+[issue tracker](https://github.com/rclone/rclone-cloud-beta/issues).
 
 ## Quick start (Docker)
 
@@ -65,6 +66,56 @@ docker run --rm \
 ```
 
 Then start the container with the command above. The rest of this page uses that command.
+
+## Install on Linux (.deb and .rpm)
+
+To run Rclone Cloud as a service on a Linux server instead of in Docker, download the package for
+your machine and `checksums.txt` from the
+[releases page](https://github.com/rclone/rclone-cloud-beta/releases):
+
+| Machine | Package |
+| --- | --- |
+| Debian, Ubuntu (x86-64 / ARM64) | `rclone-cloud_<version>_amd64.deb` / `…_arm64.deb` |
+| Fedora, RHEL and the like (x86-64 / ARM64) | `rclone-cloud-<version>.x86_64.rpm` / `….aarch64.rpm` |
+
+The releases also have the binary alone, in `rclone-cloud-v<version>-linux-amd64.tar.gz` and
+`…-linux-arm64.tar.gz`.
+
+1. Check the download and install the package:
+
+   ```sh
+   sha256sum --check --ignore-missing checksums.txt
+   sudo apt install ./rclone-cloud_<version>_amd64.deb    # Fedora: sudo dnf install ./rclone-cloud-<version>.x86_64.rpm
+   ```
+
+2. Read the settings in `/etc/default/rclone-cloud` and set the ones you need. The app listens on
+   127.0.0.1:5573 unless you set `RCLONE_CLOUD_BIND`. To open it from other computers, read
+   [Open it from other computers](#open-it-from-other-computers): the variables are the same.
+3. Start the service:
+
+   ```sh
+   sudo systemctl enable --now rclone-cloud
+   ```
+
+4. Open <http://127.0.0.1:5573> and create your account. The first account is the Owner.
+
+The package installs the `rclone-cloud` command, the workflow engine and a systemd service. The
+service runs as the `rclone-cloud` user and keeps its data in `/var/lib/rclone-cloud`. Every
+account in the app reads and writes the server's disk as that user, so give it only the folders
+that the app's users may reach.
+
+To update, install the next package the same way. It restarts a running service. Back up first.
+The backup runs while the app runs, as the service's user and with its settings:
+
+```sh
+sudo install -d -o rclone-cloud -g rclone-cloud -m 0700 /var/backups/rclone-cloud
+sudo systemd-run --pipe --wait --quiet --uid=rclone-cloud --gid=rclone-cloud \
+    -p EnvironmentFile=/etc/default/rclone-cloud -E RCLONE_CLOUD_DATA_DIR=/var/lib/rclone-cloud \
+    rclone-cloud backup --to "/var/backups/rclone-cloud/$(date +%Y%m%d-%H%M%S)"
+```
+
+The backup leaves the instance key out: keep a copy of `/var/lib/rclone-cloud/secret.key`, or of
+the file that `RCLONE_CLOUD_SECRET_KEY_FILE` names.
 
 ## Settings
 
@@ -222,7 +273,7 @@ The key volume must hold the same key as when you took the backup.
 
 ## Update
 
-Each build has a tag with its date, such as `0.0.0-20261105`. The tag `latest` is the newest build.
+Each build has a tag with its date, such as `0.0.0-beta.20261121`. The tag `latest` is the newest build.
 
 1. [Back up](#back-up).
 2. Get the new image, then stop and remove the container:
@@ -238,7 +289,7 @@ Each build has a tag with its date, such as `0.0.0-20261105`. The tag `latest` i
 A new build can change the database, and an older build then refuses it. To go back to an older
 build, restore the backup from step 1.
 
-To stay on one build, use its tag: `ghcr.io/rclone/rclone-cloud-beta:0.0.0-20261105`.
+To stay on one build, use its tag: `ghcr.io/rclone/rclone-cloud-beta:0.0.0-beta.20261121`.
 
 ## Use server folders and mount remotes
 
