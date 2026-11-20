@@ -141,4 +141,4 @@ jobs:
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.version=${{ steps.release.outputs.version }}
             org.opencontainers.image.title=rclone Cloud
-            org.opencontainers.image.description=A platform for rclone power-users.
+            org.opencontainers.image.description=A data-transfer platform built on rclone.

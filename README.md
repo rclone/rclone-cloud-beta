@@ -5,10 +5,24 @@
 
 <br />
 
-Rclone Cloud gives you and your team [rclone](https://rclone.org) in a browser: connect your cloud
-storage, browse and copy files, and run transfers, mounts and workflows. This repository publishes
-its Docker image and its [Linux packages](#install-on-linux-deb-and-rpm), and has its
+Rclone Cloud is a data-transfer platform for organizations. It moves, syncs and serves data
+between any of the 70+ storage systems that [rclone](https://rclone.org) supports, from S3,
+Azure Blob and Google Cloud Storage to SharePoint, SFTP servers and local disks. A team can run it
+with the access control, audit trail and secret handling that a company needs. Projects keep each
+team's storage, credentials and work apart. Copies, syncs and moves run on demand or on a
+schedule, and workflows chain them, retry them and send notifications.
+
+This repository publishes the beta's Docker image and its
+[Linux packages](#install-on-linux-deb-and-rpm), and has its
 [issue tracker](https://github.com/rclone/rclone-cloud-beta/issues).
+
+### Enterprise features in the beta
+
+The beta includes every feature, the Enterprise ones too: single sign-on with OpenID Connect,
+SAML and LDAP, SCIM provisioning and identity-provider groups, custom roles, external vaults, an
+instance key wrapped by your KMS, long audit retention, audit sinks and file-read audit. Please try
+them. In the first release, they will be in the paid Enterprise edition only. The open-source
+Community edition will have the rest.
 
 ## Quick start (Docker)
 
