@@ -1,0 +1,142 @@
+name: release
+
+# Publishes a beta of rclone Cloud: the Linux files of one of rclone/rclone-cloud's releases (its
+# workflow run by hand makes v0.0.0-beta.<date>) as a pre-release of this repository, then its
+# image to this repository's registry, ghcr.io/rclone/rclone-cloud-beta, for linux/amd64 and
+# linux/arm64. Run it by hand (Run workflow, or `gh workflow run release.yml`), once the release
+# has been tried.
+#
+# Only the publish job reads rclone/rclone-cloud, with RELEASES_TOKEN: a fine-grained token, or a
+# GitHub App's, with read access to that repository's contents. Run again for a release already
+# published, it leaves the release be and builds the image again.
+on:
+  workflow_dispatch:
+    inputs:
+      release:
+        description: The release's tag, such as v0.0.0-beta.20261121. Leave empty for the newest release.
+        required: false
+        default: ''
+
+permissions: {}
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    outputs:
+      tag: ${{ steps.release.outputs.tag }}
+    steps:
+      # The release's .deb and .rpm and Linux archives, checked against its checksums.txt, which is
+      # published with only their lines. The notes and title are the release's own.
+      - name: Release
+        id: release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+          RELEASES: rclone/rclone-cloud
+          ASKED: ${{ inputs.release }}
+        run: |
+          set -euo pipefail
+          tag="${ASKED:-$(gh release list -R "$RELEASES" --exclude-drafts --limit 1 --json tagName --jq '.[0].tagName')}"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          gh release download "$tag" -R "$RELEASES" -D release -p checksums.txt \
+            -p "rclone-cloud-$tag-linux-*.tar.gz" -p '*.deb' -p '*.rpm'
+          cd release
+          # GitHub renames a ~ in a file's name to a dot: releases made before the packages' names
+          # had a dot list them with the ~.
+          grep -E ' (rclone-cloud-.*-linux-[a-z0-9]+\.tar\.gz|.*\.deb|.*\.rpm)$' checksums.txt \
+            | sed 's/~/./g' > linux.txt
+          sha256sum --check --strict linux.txt
+          # Every file downloaded has its line, and the other way round.
+          diff <(find . -type f ! -name checksums.txt ! -name linux.txt -printf '%P\n' | sort) \
+            <(awk '{print $2}' linux.txt | sort)
+          mv linux.txt checksums.txt
+          gh release view "$tag" -R "$RELEASES" --json name --jq .name > ../title.txt
+          gh release view "$tag" -R "$RELEASES" --json body --jq .body > ../notes.md
+          ls -l
+
+      - name: Publish
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "::notice::$TAG is already published: leaving it as it is."
+            exit 0
+          fi
+          gh release create "$TAG" -R "$GITHUB_REPOSITORY" --prerelease \
+            --target "$GITHUB_SHA" --title "$(cat title.txt)" --notes-file notes.md release/*
+
+  image:
+    name: Image
+    needs: publish
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # The published release's Linux binaries, checked against its checksums.txt and unpacked as
+      # <arch>/rclone-cloud. Only this repository's newest release is also tagged latest.
+      - name: Release
+        id: release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.publish.outputs.tag }}
+        run: |
+          set -euo pipefail
+          tag="$TAG"
+          newest="$(gh release list -R "$GITHUB_REPOSITORY" --exclude-drafts --limit 1 --json tagName --jq '.[0].tagName')"
+          gh release download "$tag" -R "$GITHUB_REPOSITORY" -D release -p checksums.txt -p "rclone-cloud-$tag-linux-*.tar.gz"
+          (cd release && sha256sum --check --ignore-missing checksums.txt)
+          for arch in amd64 arm64; do
+            mkdir -p "context/$arch"
+            tar -xzf "release/rclone-cloud-$tag-linux-$arch.tar.gz" -C "context/$arch" \
+              --strip-components=1 "rclone-cloud-$tag-linux-$arch/rclone-cloud"
+          done
+          image="ghcr.io/${GITHUB_REPOSITORY,,}"
+          tags="$image:${tag#v}"
+          if [ "$tag" = "$newest" ]; then tags+=",$image:latest"; fi
+          echo "building $tag as ${tags//,/ }"
+          {
+            echo "version=${tag#v}"
+            echo "tags=$tags"
+          } >> "$GITHUB_OUTPUT"
+
+      - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+        with:
+          platforms: arm64
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      # The source label links the package to this repository, whose visibility it can then take.
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: context
+          file: Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.release.outputs.tags }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.version=${{ steps.release.outputs.version }}
+            org.opencontainers.image.title=rclone Cloud
+            org.opencontainers.image.description=A platform for rclone power-users.
