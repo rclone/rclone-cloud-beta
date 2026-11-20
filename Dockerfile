@@ -1,6 +1,7 @@
 # The image of an rclone Cloud release, laid out like rclone's
-# (https://github.com/rclone/rclone/blob/master/Dockerfile). The docker workflow puts each
-# platform's release binary in the build context as <arch>/rclone-cloud.
+# (https://github.com/rclone/rclone/blob/master/Dockerfile). The release workflow puts each
+# platform's release binary in the build context as <arch>/rclone-cloud, with the release's LICENSE
+# and THIRD_PARTY_NOTICES.
 FROM alpine:3.24
 
 ARG TARGETARCH
@@ -17,6 +18,7 @@ RUN echo "**** Install Dependencies ****" && \
     echo "user_allow_other" >> /etc/fuse.conf
 
 COPY ${TARGETARCH}/rclone-cloud /usr/local/bin/
+COPY ${TARGETARCH}/LICENSE ${TARGETARCH}/THIRD_PARTY_NOTICES /usr/share/doc/rclone-cloud/
 
 RUN echo "**** Print Version Binary ****" && \
     rclone-cloud version

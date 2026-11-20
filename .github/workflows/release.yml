@@ -90,7 +90,8 @@ jobs:
           persist-credentials: false
 
       # The published release's Linux binaries, checked against its checksums.txt and unpacked as
-      # <arch>/rclone-cloud. Only this repository's newest release is also tagged latest.
+      # <arch>/rclone-cloud, with the licence and notices beside them. Only this repository's newest
+      # release is also tagged latest.
       - name: Release
         id: release
         shell: bash
@@ -105,8 +106,9 @@ jobs:
           (cd release && sha256sum --check --ignore-missing checksums.txt)
           for arch in amd64 arm64; do
             mkdir -p "context/$arch"
-            tar -xzf "release/rclone-cloud-$tag-linux-$arch.tar.gz" -C "context/$arch" \
-              --strip-components=1 "rclone-cloud-$tag-linux-$arch/rclone-cloud"
+            dir="rclone-cloud-$tag-linux-$arch"
+            tar -xzf "release/$dir.tar.gz" -C "context/$arch" --strip-components=1 \
+              "$dir/rclone-cloud" "$dir/LICENSE" "$dir/THIRD_PARTY_NOTICES"
           done
           image="ghcr.io/${GITHUB_REPOSITORY,,}"
           tags="$image:${tag#v}"
